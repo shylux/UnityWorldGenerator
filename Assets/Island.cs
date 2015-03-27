@@ -3,19 +3,24 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Island : MonoBehaviour {
-	public float Width = 10f;
-	public float Length = 10f;
-	public float MaxHeight = 5f;
-	public int res = 20; // resolution
-	public float WaterLevel = 0.2f; // percentage of terrain below water level (y coord below 0)
-	public float NoiseScale = 1f;
+
+
+	public float WaterLevel = 0.3f; // percentage of terrain below water level (y coord below 0)
+	public float NoiseScale = 6f;
 
 	public Transform palm;
+	public int PalmCount = 100;
 
+	private Terrain terr;
+	private TerrainData terrdata;
 	private List<Vector3> vertices = new List<Vector3>();
 	private List<int> indices = new List<int>();
 	private float[,] heightmap;
 	private float waterHeight;
+	private int res; // resolution
+	private float Width;
+	private float Length;
+	private float MaxHeight;
 	
 	/**
 	 * Gets height of point in terrain.
@@ -33,31 +38,41 @@ public class Island : MonoBehaviour {
 
 	public void populateTerrain() {
 		float waterCorrectModifier = 1f / (1f - waterHeight);
-		for (int x = 0; x < res; x++) {
-			for (int z = 0; z < res; z++) {
-				float h = (heightmap[x, z] - waterHeight) * waterCorrectModifier;
-				float realX = (float)x / res * Width;
-				float realZ = (float)z / res * Length;
-				if (h > 0.03f && h < 0.1f) {
-					if (Random.value < 0.1) {
-						Instantiate(palm, new Vector3(realX, getHeight((float)x/res, (float)z/res) * MaxHeight, realZ), Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up));
-					}
-					//heightmap[x, z] = 1.0f;
-				}
-			}
+		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + 0.03f, 0.1f);
+		for (int i = 0; i < PalmCount; i++) {
+			Vector3 pos = possiblePalmPositions[Random.Range(0, possiblePalmPositions.Count)];
+			pos.Scale(new Vector3(Width / res, 1, Length / res));
+			Transform apalm = Instantiate(palm, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
+			apalm.parent = transform; // don't fill the Hierarchy
 		}
-			}
+	}
 	
 	// Use this for initialization
 	void Start () {
+		terr = GetComponent<Terrain> ();
+		terrdata = terr.terrainData;
+		res = terrdata.heightmapResolution;
+		Width = terrdata.size.x;
+		Length = terrdata.size.z;
+		MaxHeight = terrdata.size.y;
+
 		heightmap = new float[res, res];
 		generateHeightMap ();
 		setWaterLevel ();
 		populateTerrain ();
-		
-		MeshFilter filter = GetComponent<MeshFilter> ();
-		filter.sharedMesh = build ();
-		filter.GetComponent<Renderer>().sharedMaterial.color = Color.gray;
+
+		terrdata.SetHeights (0, 0, heightmap);
+	}
+
+	private List<Vector3> getHeightsInRange(float above, float below) {
+		List<Vector3> heights = new List<Vector3> ();
+		for (int x = 0; x < res; x++) {
+			for (int z = 0; z < res; z++) {
+				if (heightmap[x, z] > above && heightmap[x, z] < below)
+					heights.Add(new Vector3(x, heightmap[x, z], z));
+			}
+		}
+		return heights;
 	}
 	
 	private void generateHeightMap() {
