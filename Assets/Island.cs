@@ -40,7 +40,7 @@ public class Island : MonoBehaviour {
 				float realZ = (float)z / res * Length;
 				if (h > 0.03f && h < 0.1f) {
 					if (Random.value < 0.1) {
-						Instantiate(palm, new Vector3(realX, getHeight(x/res, z/res) * MaxHeight, realZ), Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up));
+						Instantiate(palm, new Vector3(realX, getHeight((float)x/res, (float)z/res) * MaxHeight, realZ), Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up));
 					}
 					//heightmap[x, z] = 1.0f;
 				}
@@ -57,7 +57,7 @@ public class Island : MonoBehaviour {
 		
 		MeshFilter filter = GetComponent<MeshFilter> ();
 		filter.sharedMesh = build ();
-		filter.renderer.sharedMaterial.color = Color.gray;
+		filter.GetComponent<Renderer>().sharedMaterial.color = Color.gray;
 	}
 	
 	private void generateHeightMap() {
