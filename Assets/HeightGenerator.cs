@@ -29,7 +29,7 @@ public abstract class HeightGenerator : MonoBehaviour {
 
 		MeshFilter filter = GetComponent<MeshFilter> ();
 		filter.sharedMesh = build ();
-		filter.renderer.sharedMaterial.color = Color.gray;
+		filter.GetComponent<Renderer>().sharedMaterial.color = Color.gray;
 	}
 
 	private void generateHeightMap() {
