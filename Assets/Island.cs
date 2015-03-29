@@ -6,7 +6,8 @@ public class Island : MonoBehaviour {
 
 
 	public float WaterLevel = 0.3f; // percentage of terrain below water level (y coord below 0)
-	public float NoiseScale = 6f;
+	public float PerlinNoiseScale = 6f;
+	public int PerlinLevels = 1;
 
 	public Transform palm;
 	[MinMaxRange( 0f, 1f )]
@@ -26,14 +27,25 @@ public class Island : MonoBehaviour {
 	
 	/**
 	 * Gets height of point in terrain.
-	 * x and z are fractions
+	 * x and z range between 0f and 1f
+	 * Output can be any number. The numbers will be normalised in generateHeightMap.  
 	 */
 	public float getHeight(float x, float z) {
 		float hx = 2 * (x - 0.5f);
 		float hz = 2 * (z - 0.5f);
 		float t = Mathf.Min (1, Mathf.Sqrt (hx*hx + hz*hz));
 		float hillH = (1 - t) * (1 - t) * (1 + t) * (1 + t);
-		float perlinH = Mathf.PerlinNoise (x * NoiseScale, z * NoiseScale);
+
+		// Perlin factor
+		float perlinH = 0f;
+		float detailLevel = 1f;
+		for (int lv = 1; lv <= PerlinLevels; lv++) {
+			float levelAddition = Mathf.PerlinNoise (x * PerlinNoiseScale / detailLevel, z * PerlinNoiseScale / detailLevel) * detailLevel;
+			detailLevel /= 2;
+
+			perlinH += levelAddition;
+		}
+		//float perlinH = Mathf.PerlinNoise (x * PerlinNoiseScale, z * PerlinNoiseScale);
 
 		return hillH * perlinH;
 	}
@@ -65,7 +77,13 @@ public class Island : MonoBehaviour {
 		terrdata.SetHeights (0, 0, heightmap);
 		populateTerrain ();
 
-
+		float max = 0f;
+		for (int x = 0; x < res; x++) {
+			for (int z = 0; z < res; z++) {
+				if (max < heightmap [x, z])
+					max = heightmap [x, z];
+			}
+		}
 	}
 
 	private List<Vector3> getHeightsInRange(float above, float below) {
@@ -78,12 +96,25 @@ public class Island : MonoBehaviour {
 		}
 		return heights;
 	}
-	
+
+	/**
+	 * Calls getHeight to generate a hightmap.
+	 * Since getHeight returns any number it will scale those that the highest number will be 1f.
+	 */
 	private void generateHeightMap() {
+		float highestPoint = 0f;
 		for (int x = 0; x < res; x++) {
 			for (int z = 0; z < res; z++) {
 				// float y = Random.Range(0f, MaxHeight);
 				heightmap[x, z] = getHeight((float)x/res, (float)z/res);
+				if (highestPoint < heightmap [x, z]) highestPoint = heightmap [x, z];
+			}
+		}
+		// Now scale heightmap that it containes values from 0f to 1f
+		float scaleFactor = 1f / highestPoint;
+		for (int x = 0; x < res; x++) {
+			for (int z = 0; z < res; z++) {
+				heightmap [x, z] *= scaleFactor;
 			}
 		}
 	}
