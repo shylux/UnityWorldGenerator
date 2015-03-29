@@ -9,6 +9,8 @@ public class Island : MonoBehaviour {
 	public float NoiseScale = 6f;
 
 	public Transform palm;
+	[MinMaxRange( 0f, 1f )]
+	public MinMaxRange PalmPlacementRange;
 	public int PalmCount = 100;
 
 	private Terrain terr;
@@ -37,11 +39,12 @@ public class Island : MonoBehaviour {
 	}
 
 	public void populateTerrain() {
-		float waterCorrectModifier = 1f / (1f - waterHeight);
-		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + 0.03f, 0.1f);
+		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + PalmPlacementRange.rangeStart, PalmPlacementRange.rangeEnd);
 		for (int i = 0; i < PalmCount; i++) {
 			Vector3 pos = possiblePalmPositions[Random.Range(0, possiblePalmPositions.Count)];
+			pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
 			pos.Scale(new Vector3(Width / res, 1, Length / res));
+
 			Transform apalm = Instantiate(palm, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
 			apalm.parent = transform; // don't fill the Hierarchy
 		}
@@ -59,9 +62,10 @@ public class Island : MonoBehaviour {
 		heightmap = new float[res, res];
 		generateHeightMap ();
 		setWaterLevel ();
+		terrdata.SetHeights (0, 0, heightmap);
 		populateTerrain ();
 
-		terrdata.SetHeights (0, 0, heightmap);
+
 	}
 
 	private List<Vector3> getHeightsInRange(float above, float below) {
