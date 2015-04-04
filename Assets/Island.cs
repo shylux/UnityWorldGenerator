@@ -14,6 +14,11 @@ public class Island : MonoBehaviour {
 	public MinMaxRange PalmPlacementRange;
 	public int PalmCount = 100;
 
+	public Transform bush;
+	[MinMaxRange( 0f, 1f )]
+	public MinMaxRange BushPlacementRange;
+	public int BushCount = 100;
+
 	private Terrain terr;
 	private TerrainData terrdata;
 	private List<Vector3> vertices = new List<Vector3>();
@@ -51,6 +56,7 @@ public class Island : MonoBehaviour {
 	}
 
 	public void populateTerrain() {
+		// Palms
 		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + PalmPlacementRange.rangeStart, PalmPlacementRange.rangeEnd);
 		for (int i = 0; i < PalmCount; i++) {
 			Vector3 pos = possiblePalmPositions[Random.Range(0, possiblePalmPositions.Count)];
@@ -59,6 +65,17 @@ public class Island : MonoBehaviour {
 
 			Transform apalm = Instantiate(palm, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
 			apalm.parent = transform; // don't fill the Hierarchy
+		}
+
+		// Bushes
+		List<Vector3> possibleBushPositions = getHeightsInRange (waterHeight + BushPlacementRange.rangeStart, BushPlacementRange.rangeEnd);
+		for (int i = 0; i < BushCount; i++) {
+			Vector3 pos = possibleBushPositions[Random.Range(0, possibleBushPositions.Count)];
+			pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
+			pos.Scale(new Vector3(Width / res, 1, Length / res));
+
+			Transform abush = Instantiate(bush, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
+			abush.parent = transform; // don't fill the Hierarchy
 		}
 	}
 	
@@ -86,6 +103,7 @@ public class Island : MonoBehaviour {
 		}
 	}
 
+	// internal vector representation (x, h[0..1], z)
 	private List<Vector3> getHeightsInRange(float above, float below) {
 		List<Vector3> heights = new List<Vector3> ();
 		for (int x = 0; x < res; x++) {
@@ -95,6 +113,15 @@ public class Island : MonoBehaviour {
 			}
 		}
 		return heights;
+	}
+
+
+	public Vector3 getRandomPointInHeightRange(float above, float below) {
+		List<Vector3> points = getHeightsInRange (above, below);
+		Vector3 point = points [Random.Range (0, points.Count-1)];
+		point.y = terrdata.GetHeight (Mathf.RoundToInt (point.x), Mathf.RoundToInt (point.z));
+		point.Scale(new Vector3(Width / res, 1, Length / res));
+		return point;
 	}
 
 	/**

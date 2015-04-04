@@ -1,9 +1,18 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq; // used for Sum of array
 
 public class HeightSplatMap : MonoBehaviour {
 	public Texture2D textureOne;
+	[Range(0f, 0.5f)]
+	public float BlendArea = 0.1f;
+	[Range(0f, 1f)]
+	public float BlendPoint1 = 0.25f;
+	[Range(0f, 1f)]
+	public float BlendPoint2 = 0.5f;
+	[Range(0f, 1f)]
+	public float BlendPoint3 = 0.75f;
 
 	void Start () {
 		// Get the attached terrain component
@@ -12,10 +21,7 @@ public class HeightSplatMap : MonoBehaviour {
 		// Get a reference to the terrain data
 		TerrainData terrainData = terrain.terrainData;
 
-		// Setup textures
-		SplatPrototype[] textures = terrainData.splatPrototypes;
-		//textures [0].texture = textureOne;
-		terrainData.splatPrototypes = textures;
+		List<float> blendPoints = new List<float> () { BlendPoint1, BlendPoint2, BlendPoint3 };
 
 
 		// Splatmap data is stored internally as a 3d array of floats, so declare a new empty array ready for your custom splatmap data:
@@ -41,11 +47,25 @@ public class HeightSplatMap : MonoBehaviour {
 
 				// CHANGE THE RULES BELOW TO SET THE WEIGHTS OF EACH TEXTURE ON WHATEVER RULES YOU WANT
 
-				splatWeights [0] = (height < 0.25f) ? 1f : 0f;
-				splatWeights [1] = (height > 0.25f && height < 0.5f) ? 1f : 0f;
-				splatWeights [2] = (height > 0.5f && height < 0.75f) ? 1f : 0f;
-				splatWeights [3] = (height > 0.75f) ? 1f : 0f;
+				for (int i = 0; i < terrainData.alphamapLayers; i++) {
 
+					float startBlend, endBlend;
+
+					if (i == 0)
+						startBlend = float.MaxValue;
+					else
+						startBlend = (1f / BlendArea) * (height - (blendPoints [i-1] - BlendArea));
+
+					if (i + 1 == terrainData.alphamapLayers)
+						endBlend = float.MaxValue;
+					else
+						endBlend = (-1f / BlendArea) * (height - (blendPoints [i] + BlendArea));
+
+					float splatWeight = Mathf.Clamp01 (Mathf.Min (startBlend, endBlend));
+
+					splatWeights [i] = splatWeight;
+				}
+					
 				// Texture[0] has constant influence
 				//splatWeights[0] = 0.5f;
 
