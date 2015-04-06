@@ -56,6 +56,9 @@ public class Island : MonoBehaviour {
 	}
 
 	public void populateTerrain() {
+		GameObject trees = new GameObject ();
+		trees.name = "Trees";
+		trees.transform.parent = terr.transform;
 		// Palms
 		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + PalmPlacementRange.rangeStart, PalmPlacementRange.rangeEnd);
 		for (int i = 0; i < PalmCount; i++) {
@@ -64,7 +67,7 @@ public class Island : MonoBehaviour {
 			pos.Scale(new Vector3(Width / res, 1, Length / res));
 
 			Transform apalm = Instantiate(palm, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
-			apalm.parent = transform; // don't fill the Hierarchy
+			apalm.transform.parent = trees.transform; // don't fill the Hierarchy
 		}
 
 		// Bushes
@@ -75,7 +78,7 @@ public class Island : MonoBehaviour {
 			pos.Scale(new Vector3(Width / res, 1, Length / res));
 
 			Transform abush = Instantiate(bush, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
-			abush.parent = transform; // don't fill the Hierarchy
+			abush.transform.parent = trees.transform; // don't fill the Hierarchy
 		}
 	}
 	

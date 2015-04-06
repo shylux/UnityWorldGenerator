@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Linq; // used for Sum of array
 
 public class HeightSplatMap : MonoBehaviour {
-	public Texture2D textureOne;
 	[Range(0f, 0.5f)]
 	public float BlendArea = 0.1f;
 	[Range(0f, 1f)]
