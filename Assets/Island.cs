@@ -35,7 +35,7 @@ public class Island : MonoBehaviour {
 	 * x and z range between 0f and 1f
 	 * Output can be any number. The numbers will be normalised in generateHeightMap.  
 	 */
-	public float getHeight(float x, float z) {
+	public virtual float getHeight(float x, float z) {
 		float hx = 2 * (x - 0.5f);
 		float hz = 2 * (z - 0.5f);
 		float t = Mathf.Min (1, Mathf.Sqrt (hx*hx + hz*hz));
@@ -60,25 +60,29 @@ public class Island : MonoBehaviour {
 		trees.name = "Trees";
 		trees.transform.parent = terr.transform;
 		// Palms
-		List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + PalmPlacementRange.rangeStart, PalmPlacementRange.rangeEnd);
-		for (int i = 0; i < PalmCount; i++) {
-			Vector3 pos = possiblePalmPositions[Random.Range(0, possiblePalmPositions.Count)];
-			pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
-			pos.Scale(new Vector3(Width / res, 1, Length / res));
+		if (palm != null && PalmCount > 0) {
+			List<Vector3> possiblePalmPositions = getHeightsInRange (waterHeight + PalmPlacementRange.rangeStart, PalmPlacementRange.rangeEnd);
+			for (int i = 0; i < PalmCount; i++) {
+				Vector3 pos = possiblePalmPositions [Random.Range (0, possiblePalmPositions.Count)];
+				pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
+				pos.Scale (new Vector3 (Width / res, 1, Length / res));
 
-			Transform apalm = Instantiate(palm, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
-			apalm.transform.parent = trees.transform; // don't fill the Hierarchy
+				Transform apalm = Instantiate (palm, pos + transform.position, Quaternion.AngleAxis (Random.Range (0, 360), Vector3.up)) as Transform;
+				apalm.transform.parent = trees.transform; // don't fill the Hierarchy
+			}
 		}
 
 		// Bushes
-		List<Vector3> possibleBushPositions = getHeightsInRange (waterHeight + BushPlacementRange.rangeStart, BushPlacementRange.rangeEnd);
-		for (int i = 0; i < BushCount; i++) {
-			Vector3 pos = possibleBushPositions[Random.Range(0, possibleBushPositions.Count)];
-			pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
-			pos.Scale(new Vector3(Width / res, 1, Length / res));
+		if (bush != null && BushCount > 0) {
+			List<Vector3> possibleBushPositions = getHeightsInRange (waterHeight + BushPlacementRange.rangeStart, BushPlacementRange.rangeEnd);
+			for (int i = 0; i < BushCount; i++) {
+				Vector3 pos = possibleBushPositions [Random.Range (0, possibleBushPositions.Count)];
+				pos.y = terrdata.GetHeight (Mathf.RoundToInt (pos.x), Mathf.RoundToInt (pos.z));
+				pos.Scale (new Vector3 (Width / res, 1, Length / res));
 
-			Transform abush = Instantiate(bush, pos + transform.position, Quaternion.AngleAxis(Random.Range(0, 360), Vector3.up)) as Transform;
-			abush.transform.parent = trees.transform; // don't fill the Hierarchy
+				Transform abush = Instantiate (bush, pos + transform.position, Quaternion.AngleAxis (Random.Range (0, 360), Vector3.up)) as Transform;
+				abush.transform.parent = trees.transform; // don't fill the Hierarchy
+			}
 		}
 	}
 	

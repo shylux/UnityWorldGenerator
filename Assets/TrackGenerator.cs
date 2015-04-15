@@ -28,6 +28,10 @@ public class TrackGenerator : MonoBehaviour {
 	GameObject track;
 	List<Vector3> vertices;
 	List<Vector2> uvs;
+	public Transform CheckPointPrefab;
+	public int CheckPointFrequency = 10;
+	
+	public Transform Car;
 
 	private List<Vector3> trackPoints = new List<Vector3> ();
 
@@ -66,6 +70,15 @@ public class TrackGenerator : MonoBehaviour {
 			Debug.DrawLine (trackPoints[i] + transform.position, trackPoints[i+1] + transform.position, Color.red, 60);
 
 		renderTrack ();
+
+		if (Car != null) {
+			Vector3 startpos = trackPoints[0] + transform.position;
+			startpos.y = transform.position.y + terrainData.heightmapHeight;
+			RaycastHit hit = new RaycastHit();
+			Physics.Raycast(startpos, Vector3.down, out hit);
+			Car.position = hit.point;
+			Car.forward = trackPoints[1] - trackPoints[0];
+		}
 	}
 
 	public void renderTrack() {
@@ -99,6 +112,7 @@ public class TrackGenerator : MonoBehaviour {
 			float correctHeight = Mathf.Max (rightHeight, leftHeight) + TrackLift;
 			right.y = correctHeight;
 			left.y = correctHeight;
+			trackPoints[i] = new Vector3(trackPoints[i].x, correctHeight, trackPoints[i].z);
 
 			// Connect the road to the ground with a slope
 			Vector3 sidewayR = right + Quaternion.AngleAxis (-SlopeDeg, direction) * rightDirection * SlopeSize;
@@ -139,6 +153,15 @@ public class TrackGenerator : MonoBehaviour {
 				addTriangle (sideRTr, vertices.Count - 4, 2, 0);
 				addTriangle (sideLTr, vertices.Count - 3, 1, vertices.Count - 1);
 				addTriangle (sideLTr, vertices.Count - 1, 1, 3);
+			}
+
+			// Checkpoint
+			if (i % CheckPointFrequency == 0) {
+				Transform checkpoint = Instantiate (CheckPointPrefab, trackPoints[i] + transform.position, Quaternion.LookRotation(direction)) as Transform;
+				Vector3 tmp = checkpoint.localScale;
+				tmp.Scale(new Vector3(TrackWidth, TrackWidth, 1));
+				checkpoint.localScale = tmp;
+				checkpoint.parent = track.transform;
 			}
 
 			Debug.DrawLine (left + transform.position, right + transform.position, Color.yellow, 60);
