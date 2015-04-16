@@ -3,48 +3,47 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // used for Sum of array
 
-public class MazeGenerator : Island {
+public class MazeGenerator: MonoBehaviour {
 	Maze2D maze;
 
-	public override float getHeight(float x, float z) {
-		//return (maze.cell(x, z).get()) ? 3f: 0f;
-		return (((x + z) % 2 == 0) ? 1f: 0f);
+	public int width = 10;
+	public int length = 10;
+	public Transform WallPrefab;
+	float unitSize; // length of one sqare containing a cell and two walls
+
+	void Start() {
+		maze = new Maze2D (width, length);
+		foreach (Maze2D.Wall wall in maze.Walls())
+			wall.set (true);
+
+		BuildMazeInSzene ();
 	}
 
-//	void Start() {
-//		Terrain terrain = GetComponent<Terrain>();
-//		TerrainData terrainData = terrain.terrainData;
-//		float[, ,] splatmapData = new float[terrainData.alphamapWidth, terrainData.alphamapHeight, terrainData.alphamapLayers];
-//
-//		maze = new Maze2D(terrainData.alphamapWidth, terrainData.alphamapHeight);
-//		foreach (Maze2D.Cell c in maze.Cells())
-//			c.set (((c.x + c.y) % 2 == 0));
-//	}
+	void BuildMazeInSzene() {
+		Vector3 size = getBounds(WallPrefab);
+		unitSize = size.x + size.z;
+		foreach (Maze2D.Wall wall in maze.Walls()) {
+			if (!wall.get()) continue;
+			Vector3 offset, pos = new Vector3 (wall.x * unitSize, 0, Mathf.Min(wall.y/2) * unitSize);
+			Quaternion rot;
+			if (wall.y % 2 == 0) { // horizontal
+				rot = Quaternion.identity;
+				offset = new Vector3 (size.z, 0, size.z / 2);
+			} else { // vertical
+				rot = Quaternion.AngleAxis(-90, Vector3.up);
+				offset = new Vector3 (size.z / 2, 0, size.z);
+			}
+			Transform wallObj = Instantiate (WallPrefab, pos + offset + transform.position, rot) as Transform;
+			wallObj.transform.parent = transform.parent;
+		}
+		// Debug.Log (size.x + " " + size.y + " " + size.z);
+	}
 
-//	void Start() {
-//		Terrain terrain = GetComponent<Terrain>();
-//		TerrainData terrainData = terrain.terrainData;
-//		float[, ,] splatmapData = new float[terrainData.alphamapWidth, terrainData.alphamapHeight, terrainData.alphamapLayers];
-//
-//		Maze2D maze = new Maze2D(terrainData.alphamapWidth, terrainData.alphamapHeight);
-//		foreach (Maze2D.Cell c in maze.Cells())
-//			c.set (((c.x + c.y) % 2 == 0));
-//
-//		for (int iz = 0; iz < terrainData.alphamapHeight; iz++) {
-//			for (int ix = 0; ix < terrainData.alphamapWidth; ix++) {
-//				float[] splatWeights = new float[terrainData.alphamapLayers];
-//
-//				splatWeights[0] = maze.cell(ix, iz).get() ? 1f : 0f;
-//				splatWeights[1] = maze.cell(ix, iz).get() ? 0f : 1f;
-//
-//				float texture_sum = splatWeights.Sum();
-//				for(int i = 0; i<terrainData.alphamapLayers; i++){
-//					splatWeights[i] /= texture_sum;
-//					splatmapData[ix, iz, i] = splatWeights[i];
-//				}
-//			}
-//		}
-//
-//		terrainData.SetAlphamaps(0, 0, splatmapData);
-//	}
+	Vector3 getBounds(Transform parent) {
+		Bounds bounds = parent.GetComponent<Renderer>().bounds;
+		foreach (Transform child in parent.transform) {
+			bounds.Encapsulate(child.GetComponent<Renderer>().bounds);
+		}
+		return bounds.size;
+	}
 }
