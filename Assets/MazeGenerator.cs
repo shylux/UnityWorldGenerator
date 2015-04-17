@@ -11,11 +11,14 @@ public class MazeGenerator: MonoBehaviour {
 	public Transform WallPrefab;
 	float unitSize; // length of one sqare containing a cell and two walls
 
+	List<List<Maze2D.Cell>> cellGroups = new List<List<Maze2D.Cell>>();
+
 	void Start() {
 		maze = new Maze2D (width, length);
 		foreach (Maze2D.Wall wall in maze.Walls())
 			wall.set (true);
 
+		RandomizedKruskal ();
 		BuildMazeInSzene ();
 	}
 
@@ -45,5 +48,20 @@ public class MazeGenerator: MonoBehaviour {
 			bounds.Encapsulate(child.GetComponent<Renderer>().bounds);
 		}
 		return bounds.size;
+	}
+
+	private void RandomizedKruskal() {
+		foreach (Maze2D.Cell c in maze.Cells()) {
+			cellGroups.Add(new List<Maze2D.Cell> {c});
+		}
+		foreach (Maze2D.Wall w in maze.Walls()) {
+
+		}
+		foreach (Maze2D.Cell c in maze.Cells()) {
+			foreach (List<Maze2D.Cell> lst in cellGroups) {
+				if (lst.Contains(c))
+					Debug.Log(c);
+			}
+		}
 	}
 }
