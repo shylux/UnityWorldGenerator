@@ -10,6 +10,8 @@ public class MazeGenerator: MonoBehaviour {
 	public int width = 10;
 	public int length = 10;
 	public Transform WallPrefab;
+    private Vector3 wallSize;
+    public Transform WallSeparatorPrefab;
 	float unitSize; // length of one sqare containing a cell and two walls
 
     public int LanesMaxLength = 0;
@@ -18,10 +20,13 @@ public class MazeGenerator: MonoBehaviour {
 
 	void Start() {
 		maze = new Maze2D (width, length);
-		foreach (Maze2D.Wall wall in maze.Walls())
-			wall.set (true);
+        foreach (Maze2D.Wall wall in maze.Walls())
+            wall.set(true);
 
         KnoepfelLanes();
+
+        wallSize = getBounds(WallPrefab);
+        unitSize = wallSize.x + wallSize.z;
         BuildStartFinish();
 		BuildMazeInSzene ();
 	}
@@ -30,29 +35,47 @@ public class MazeGenerator: MonoBehaviour {
         GameObject wallContainer = new GameObject();
         wallContainer.name = "Walls";
         wallContainer.transform.parent = transform;
-        
-		Vector3 size = getBounds(WallPrefab);
-		unitSize = size.x + size.z;
+		
 		foreach (Maze2D.Wall wall in maze.Walls()) {
-			if (!wall.get()) continue;
-			Vector3 offset, pos = new Vector3 (wall.x * unitSize, 0, Mathf.Min(wall.y/2) * unitSize);
-			Quaternion rot;
-			if (wall.y % 2 == 0) { // horizontal
-				rot = Quaternion.identity;
-				offset = new Vector3 (size.z, 0, size.z / 2);
-			} else { // vertical
-				rot = Quaternion.AngleAxis(-90, Vector3.up);
-				offset = new Vector3 (size.z / 2, 0, size.z);
-			}
-			Transform wallObj = Instantiate (WallPrefab, pos + offset + transform.position, rot) as Transform;
-			wallObj.transform.parent = wallContainer.transform;
+            Vector3 pos = new Vector3(wall.x * unitSize, 0, Mathf.Min(wall.y / 2) * unitSize);
+            // WALL SEPARATORS
+            if (wall.y % 2 == 0) {
+                Transform wallSepObj = Instantiate(WallSeparatorPrefab) as Transform;
+                wallSepObj.transform.parent = wallContainer.transform;
+                wallSepObj.position = wallSepObj.position + pos + transform.position + new Vector3(wallSize.z / 2, 0, wallSize.z / 2);
+                if (wall.x == width - 1) {
+                    Transform wallSepObjLast = Instantiate(WallSeparatorPrefab) as Transform;
+                    wallSepObjLast.transform.parent = wallContainer.transform;
+                    wallSepObjLast.position = wallSepObjLast.position + pos + transform.position + new Vector3(wallSize.z / 2 + unitSize, 0, wallSize.z / 2);
+                }
+
+            }
+
+            // WALLS
+            if (wall.get()) {
+                Vector3 offset;
+                Quaternion rot;
+                if (wall.y % 2 == 0) { // horizontal
+                    rot = Quaternion.identity;
+                    offset = new Vector3(wallSize.z, 0, wallSize.z / 2);
+                } else { // vertical
+                    rot = Quaternion.AngleAxis(-90, Vector3.up);
+                    offset = new Vector3(wallSize.z / 2, 0, wallSize.z);
+                }
+                Transform wallObj = Instantiate(WallPrefab, pos + offset + transform.position, rot) as Transform;
+                wallObj.transform.parent = wallContainer.transform;
+            }
 		}
 		// Debug.Log (size.x + " " + size.y + " " + size.z);
 	}
 
     void BuildStartFinish() {
-        maze.wall(0, 0).set(false);
-        maze.mwall(-1, -1).set(false);   
+        maze.wall(width/2, 0).set(false);
+        maze.mwall(width/2, -1).set(false);
+        Transform start = transform.Find("Start");
+        start.position = start.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, 0);
+        Transform finish = transform.Find("Finish");
+        finish.position = finish.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, length * unitSize);
     }
 
 	Vector3 getBounds(Transform parent) {
