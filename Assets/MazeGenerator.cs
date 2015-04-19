@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq; // used for Sum of array
+using System.Text; // StringBuilder
 
 public class MazeGenerator: MonoBehaviour {
 	Maze2D maze;
@@ -11,6 +12,8 @@ public class MazeGenerator: MonoBehaviour {
 	public Transform WallPrefab;
 	float unitSize; // length of one sqare containing a cell and two walls
 
+    public int LanesMaxLength = 0;
+
 	List<List<Maze2D.Cell>> cellGroups = new List<List<Maze2D.Cell>>();
 
 	void Start() {
@@ -18,11 +21,16 @@ public class MazeGenerator: MonoBehaviour {
 		foreach (Maze2D.Wall wall in maze.Walls())
 			wall.set (true);
 
-		RandomizedKruskal ();
+        KnoepfelLanes();
+        BuildStartFinish();
 		BuildMazeInSzene ();
 	}
 
 	void BuildMazeInSzene() {
+        GameObject wallContainer = new GameObject();
+        wallContainer.name = "Walls";
+        wallContainer.transform.parent = transform;
+        
 		Vector3 size = getBounds(WallPrefab);
 		unitSize = size.x + size.z;
 		foreach (Maze2D.Wall wall in maze.Walls()) {
@@ -37,10 +45,15 @@ public class MazeGenerator: MonoBehaviour {
 				offset = new Vector3 (size.z / 2, 0, size.z);
 			}
 			Transform wallObj = Instantiate (WallPrefab, pos + offset + transform.position, rot) as Transform;
-			wallObj.transform.parent = transform.parent;
+			wallObj.transform.parent = wallContainer.transform;
 		}
 		// Debug.Log (size.x + " " + size.y + " " + size.z);
 	}
+
+    void BuildStartFinish() {
+        maze.wall(0, 0).set(false);
+        maze.mwall(-1, -1).set(false);   
+    }
 
 	Vector3 getBounds(Transform parent) {
 		Bounds bounds = parent.GetComponent<Renderer>().bounds;
@@ -54,14 +67,91 @@ public class MazeGenerator: MonoBehaviour {
 		foreach (Maze2D.Cell c in maze.Cells()) {
 			cellGroups.Add(new List<Maze2D.Cell> {c});
 		}
-		foreach (Maze2D.Wall w in maze.Walls()) {
 
-		}
-		foreach (Maze2D.Cell c in maze.Cells()) {
-			foreach (List<Maze2D.Cell> lst in cellGroups) {
-				if (lst.Contains(c))
-					Debug.Log(c);
-			}
+        List<Maze2D.Wall> walls = maze.Walls().ToList();
+        maze.Shuffle(walls);
+		foreach (Maze2D.Wall w in walls) {
+            Maze2D.Cell a = w.getAdjacentCell(0);
+            Maze2D.Cell b = w.getAdjacentCell(1);
+            if (a == null || b == null) continue;
+            //Debug.Log(w.ToString() + "" + a.ToString() + "" + b.ToString());
+            if (!areCellsInSameGroup(a, b)) {
+                mergeCellGroup(a, b);
+                w.set(false);
+            }
 		}
 	}
+
+    private void KnoepfelLanes() {
+        if (LanesMaxLength < 2) LanesMaxLength = int.MaxValue;
+        List<Maze2D.Cell> unassignedCells = maze.Cells().ToList();
+        maze.Shuffle(unassignedCells);
+        while (unassignedCells.Count > 0) {
+            Maze2D.Cell startCell = unassignedCells[0];
+            unassignedCells.Remove(startCell);
+            List<Maze2D.Cell> currentGroup = new List<Maze2D.Cell>() { startCell };
+            cellGroups.Add(currentGroup);
+            Maze2D.Cell currentCell = startCell;
+            Vector2 direction = Maze2D.DIRECTIONS[Random.Range(0, Maze2D.DIRECTIONS.Count)];
+            int stepCounter = 1;
+            while (true) {
+                if (stepCounter >= LanesMaxLength) break;
+                Maze2D.Cell nextCell = currentCell + direction;
+                if (nextCell == null || !unassignedCells.Contains(nextCell)) break;
+                currentCell.getWall(direction).set(false);
+                unassignedCells.Remove(nextCell);
+                currentGroup.Add(nextCell);
+                stepCounter++;
+                currentCell = nextCell;
+            }                       
+        }
+        while (cellGroups.Count > 1) {
+            List<Maze2D.Cell> currentGroup = getSmallestCellGroup();
+            Maze2D.Cell currentCell = currentGroup[Random.Range(0, currentGroup.Count)];
+            Vector2 direction = Maze2D.DIRECTIONS[Random.Range(0, Maze2D.DIRECTIONS.Count)];
+            while (true) {
+                Maze2D.Cell nextCell = currentCell + direction;
+                if (nextCell == null) break;
+                if (areCellsInSameGroup(currentCell, nextCell)) {
+                    currentCell = nextCell;
+                    continue;
+                }
+                // other cell must be in other group
+                currentCell.getWall(direction).set(false);
+                mergeCellGroup(currentCell, nextCell);
+                break;
+            }
+        }
+    }
+
+    private List<Maze2D.Cell> getCellGroup(Maze2D.Cell cell) {
+        foreach (List<Maze2D.Cell> lst in cellGroups) {
+            if (lst.Contains(cell)) return lst;
+        }
+        return null;
+    }
+    private List<Maze2D.Cell> getSmallestCellGroup() {
+        List<Maze2D.Cell> smallestGroup = cellGroups[0];
+        foreach (List<Maze2D.Cell> lst in cellGroups) {
+            if (lst.Count < smallestGroup.Count) smallestGroup = lst;
+        }
+        return smallestGroup;
+    }
+    private bool areCellsInSameGroup(Maze2D.Cell a, Maze2D.Cell b) {
+        return getCellGroup(a).Contains(b);
+    }
+    private void mergeCellGroup(Maze2D.Cell a, Maze2D.Cell b) {
+        // Debug.Log(a.ToString() + "" + getCellGroup(a) + "" + b.ToString() + "" + getCellGroup(b));
+        List<Maze2D.Cell> lsta = getCellGroup(a);
+        List<Maze2D.Cell> lstb = getCellGroup(b);
+        lsta.AddRange(lstb);
+        cellGroups.Remove(lstb);
+
+    }
+
+
 }
+
+/*
+
+*/
