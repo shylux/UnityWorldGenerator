@@ -7,18 +7,25 @@ using System.Text; // StringBuilder
 public class MazeGenerator: MonoBehaviour {
 	Maze2D maze;
 
+    public bool debugMode = false;
 	public int width = 10;
 	public int length = 10;
+    public int LanesMaxLength = 0;
+
 	public Transform WallPrefab;
     private Vector3 wallSize;
     public Transform WallSeparatorPrefab;
 	float unitSize; // length of one sqare containing a cell and two walls
 
-    public int LanesMaxLength = 0;
-
 	List<List<Maze2D.Cell>> cellGroups = new List<List<Maze2D.Cell>>();
 
 	void Start() {
+        if (!debugMode) {
+            width = GameProperties.MazeWidth;
+            length = GameProperties.MazeLength;
+            LanesMaxLength = GameProperties.MaxLaneLength;
+        }
+
 		maze = new Maze2D (width, length);
         foreach (Maze2D.Wall wall in maze.Walls())
             wall.set(true);
