@@ -180,6 +180,13 @@ public class MazeGenerator: MonoBehaviour {
     }
 
 
+	/* GETTER */
+	public float getWidth() {
+		return width * unitSize;
+	}
+	public float getLength() {
+		return length * unitSize;
+	}
 }
 
 /*

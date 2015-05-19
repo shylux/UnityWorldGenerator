@@ -36,6 +36,6 @@ public class MazeRunner : MonoBehaviour {
         float fraction = time % 1;
         int seconds = (int)(time - fraction) % 60;
         int minutes = (int)(time - fraction - seconds) / 60;
-        return String.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, Mathf.Round(fraction*10));
+        return String.Format("{0:00}:{1:00}:{2:00}", minutes, seconds, Mathf.Round(fraction*100-1));
     }
 }
