@@ -88,7 +88,11 @@ public class MazeGenerator: MonoBehaviour {
 	Vector3 getBounds(Transform parent) {
 		Bounds bounds = parent.GetComponent<Renderer>().bounds;
 		foreach (Transform child in parent.transform) {
-			bounds.Encapsulate(child.GetComponent<Renderer>().bounds);
+			Renderer renderer = child.GetComponent<Renderer>();
+			Collider collider = child.GetComponent<Collider>();
+			if (collider && renderer) {
+				bounds.Encapsulate(renderer.bounds);
+			}
 		}
 		return bounds.size;
 	}
