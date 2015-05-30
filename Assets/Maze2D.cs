@@ -72,6 +72,7 @@ public class Maze2D {
 	}
 
 	public class Wall: Element, IEquatable<Wall> {
+		public GameObject gameobj;
 		public Wall (Maze2D _parent, int _x, int _y): base(_parent, _x, _y) {
             if (y < 0) y += parent.walls.GetUpperBound(1);
             if (x < 0) {
@@ -132,6 +133,16 @@ public class Maze2D {
             list[n] = value;
         }
     }
+}
 
+public enum MazeHistoryAction {Create, Enable, Disable, Destroy};
+public class MazeHistoryEntry {
+	public Maze2D.Wall wall;
+	public MazeHistoryAction action;
+
+	public MazeHistoryEntry(Maze2D.Wall _wall, MazeHistoryAction _action) {
+		wall = _wall;
+		action = _action;
+	}
 }
 

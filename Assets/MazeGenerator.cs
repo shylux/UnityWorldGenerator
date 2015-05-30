@@ -7,6 +7,7 @@ using System.Text; // StringBuilder
 public class MazeGenerator: MonoBehaviour {
 	Maze2D maze;
 
+	public enum HistoryAction {CREATE, ENABLE, DISABLE, DESTROY};
     public bool debugMode = false;
 	public int width = 10;
 	public int length = 10;
@@ -18,6 +19,7 @@ public class MazeGenerator: MonoBehaviour {
 	float unitSize; // length of one sqare containing a cell and two walls
 
 	List<List<Maze2D.Cell>> cellGroups = new List<List<Maze2D.Cell>>();
+	List<List<MazeHistoryEntry>> history = new List<List<MazeHistoryEntry>>();
 
 	void Start() {
         if (!debugMode) {
@@ -27,8 +29,6 @@ public class MazeGenerator: MonoBehaviour {
         }
 
 		maze = new Maze2D (width, length);
-        foreach (Maze2D.Wall wall in maze.Walls())
-            wall.set(true);
 
         KnoepfelLanes();
 
@@ -38,63 +38,78 @@ public class MazeGenerator: MonoBehaviour {
 		BuildMazeInSzene ();
 	}
 
+	void DefaultMazeState(bool wallsEnabled) {
+		List<MazeHistoryEntry> initialState = new List<MazeHistoryEntry> ();
+		foreach (Maze2D.Wall wall in maze.Walls()) {
+			wall.set (wallsEnabled);
+			initialState.Add(new MazeHistoryEntry(wall, MazeHistoryAction.Create));
+			if (!wallsEnabled)
+				initialState.Add(new MazeHistoryEntry(wall, MazeHistoryAction.Disable));
+		}
+		history.Add (initialState);
+	}
+
 	void BuildMazeInSzene() {
         GameObject wallContainer = new GameObject();
         wallContainer.name = "Walls";
         wallContainer.transform.parent = transform;
 		
 		foreach (Maze2D.Wall wall in maze.Walls()) {
-            Vector3 pos = new Vector3(wall.x * unitSize, 0, Mathf.Min(wall.y / 2) * unitSize);
-            // WALL SEPARATORS
-            if (wall.y % 2 == 0) {
-                Transform wallSepObj = Instantiate(WallSeparatorPrefab) as Transform;
-                wallSepObj.transform.parent = wallContainer.transform;
-                wallSepObj.position = wallSepObj.position + pos + transform.position + new Vector3(wallSize.z / 2, 0, wallSize.z / 2);
-                if (wall.x == width - 1) {
-                    Transform wallSepObjLast = Instantiate(WallSeparatorPrefab) as Transform;
-                    wallSepObjLast.transform.parent = wallContainer.transform;
-                    wallSepObjLast.position = wallSepObjLast.position + pos + transform.position + new Vector3(wallSize.z / 2 + unitSize, 0, wallSize.z / 2);
-                }
 
-            }
-
-            // WALLS
-            if (wall.get()) {
-                Vector3 offset;
-                Quaternion rot;
-                if (wall.y % 2 == 0) { // horizontal
-                    rot = Quaternion.identity;
-                    offset = new Vector3(wallSize.z, 0, wallSize.z / 2);
-                } else { // vertical
-                    rot = Quaternion.AngleAxis(-90, Vector3.up);
-                    offset = new Vector3(wallSize.z / 2, 0, wallSize.z);
-                }
-                Transform wallObj = Instantiate(WallPrefab, pos + offset + transform.position, rot) as Transform;
-                wallObj.transform.parent = wallContainer.transform;
             }
 		}
 		// Debug.Log (size.x + " " + size.y + " " + size.z);
 	}
 
-    void BuildStartFinish() {
-        maze.wall(width/2, 0).set(false);
-        maze.mwall(width/2, -1).set(false);
-        Transform start = transform.Find("Start");
-        start.position = start.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, 0);
-        Transform finish = transform.Find("Finish");
-        finish.position = finish.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, length * unitSize);
-    }
-
-	Vector3 getBounds(Transform parent) {
-		Bounds bounds = parent.GetComponent<Renderer>().bounds;
-		foreach (Transform child in parent.transform) {
-			Renderer renderer = child.GetComponent<Renderer>();
-			Collider collider = child.GetComponent<Collider>();
-			if (collider && renderer) {
-				bounds.Encapsulate(renderer.bounds);
+	void CreateWallInScene(Maze2D.Wall) {
+		Vector3 pos = new Vector3(wall.x * unitSize, 0, Mathf.Min(wall.y / 2) * unitSize);
+		// WALL SEPARATORS
+		if (wall.y % 2 == 0) {
+			Transform wallSepObj = Instantiate(WallSeparatorPrefab) as Transform;
+			wallSepObj.transform.parent = wallContainer.transform;
+			wallSepObj.position = wallSepObj.position + pos + transform.position + new Vector3(wallSize.z / 2, 0, wallSize.z / 2);
+			if (wall.x == width - 1) {
+				Transform wallSepObjLast = Instantiate(WallSeparatorPrefab) as Transform;
+				wallSepObjLast.transform.parent = wallContainer.transform;
+				wallSepObjLast.position = wallSepObjLast.position + pos + transform.position + new Vector3(wallSize.z / 2 + unitSize, 0, wallSize.z / 2);
 			}
+			
 		}
-		return bounds.size;
+		
+		// WALLS
+		if (wall.get()) {
+			Vector3 offset;
+			Quaternion rot;
+			if (wall.y % 2 == 0) { // horizontal
+				rot = Quaternion.identity;
+				offset = new Vector3(wallSize.z, 0, wallSize.z / 2);
+			} else { // vertical
+				rot = Quaternion.AngleAxis(-90, Vector3.up);
+				offset = new Vector3(wallSize.z / 2, 0, wallSize.z);
+			}
+			Transform wallObj = Instantiate(WallPrefab, pos + offset + transform.position, rot) as Transform;
+			wallObj.transform.parent = wallContainer.transform;
+		}
+
+	    void BuildStartFinish() {
+	        maze.wall(width/2, 0).set(false);
+	        maze.mwall(width/2, -1).set(false);
+	        Transform start = transform.Find("Start");
+	        start.position = start.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, 0);
+	        Transform finish = transform.Find("Finish");
+	        finish.position = finish.position + new Vector3(width / 2 * unitSize + unitSize / 2f, 0, length * unitSize);
+	    }
+
+		Vector3 getBounds(Transform parent) {
+			Bounds bounds = parent.GetComponent<Renderer>().bounds;
+			foreach (Transform child in parent.transform) {
+				Renderer renderer = child.GetComponent<Renderer>();
+				Collider collider = child.GetComponent<Collider>();
+				if (collider && renderer) {
+					bounds.Encapsulate(renderer.bounds);
+				}
+			}
+			return bounds.size;
 	}
 
 	private void RandomizedKruskal() {
@@ -117,6 +132,7 @@ public class MazeGenerator: MonoBehaviour {
 	}
 
     private void KnoepfelLanes() {
+		DefaultMazeState (true);
         if (LanesMaxLength < 2) LanesMaxLength = int.MaxValue;
         List<Maze2D.Cell> unassignedCells = maze.Cells().ToList();
         maze.Shuffle(unassignedCells);
@@ -126,18 +142,20 @@ public class MazeGenerator: MonoBehaviour {
             List<Maze2D.Cell> currentGroup = new List<Maze2D.Cell>() { startCell };
             cellGroups.Add(currentGroup);
             Maze2D.Cell currentCell = startCell;
+			List<MazeHistoryEntry> laneHistoryEntry = new List<MazeHistoryEntry> ();
             Vector2 direction = Maze2D.DIRECTIONS[Random.Range(0, Maze2D.DIRECTIONS.Count)];
             int stepCounter = 1;
-            while (true) {
-                if (stepCounter >= LanesMaxLength) break;
+			while (stepCounter < LanesMaxLength) {
                 Maze2D.Cell nextCell = currentCell + direction;
                 if (nextCell == null || !unassignedCells.Contains(nextCell)) break;
+				laneHistoryEntry.Add(new MazeHistoryEntry(currentCell.getWall(direction), MazeHistoryAction.Disable));
                 currentCell.getWall(direction).set(false);
                 unassignedCells.Remove(nextCell);
                 currentGroup.Add(nextCell);
                 stepCounter++;
                 currentCell = nextCell;
-            }                       
+            }
+			if (laneHistoryEntry.Count > 0) history.Add(laneHistoryEntry);
         }
         while (cellGroups.Count > 1) {
             List<Maze2D.Cell> currentGroup = getSmallestCellGroup();
@@ -151,7 +169,10 @@ public class MazeGenerator: MonoBehaviour {
                     continue;
                 }
                 // other cell must be in other group
+				List<MazeHistoryEntry> laneHistoryEntry = new List<MazeHistoryEntry> ();
+				laneHistoryEntry.Add(new MazeHistoryEntry(currentCell.getWall(direction), MazeHistoryAction.Disable));
                 currentCell.getWall(direction).set(false);
+				history.Add(laneHistoryEntry);
                 mergeCellGroup(currentCell, nextCell);
                 break;
             }
@@ -180,7 +201,6 @@ public class MazeGenerator: MonoBehaviour {
         List<Maze2D.Cell> lstb = getCellGroup(b);
         lsta.AddRange(lstb);
         cellGroups.Remove(lstb);
-
     }
 
 
