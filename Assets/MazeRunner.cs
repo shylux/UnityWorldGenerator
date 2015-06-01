@@ -7,6 +7,7 @@ using System.Collections;
 public class MazeRunner : MonoBehaviour {
     public Transform Car;
     public Text elapsedTimeLabel;
+	public Button backButton;
 
 	float startTime;
 
@@ -29,6 +30,7 @@ public class MazeRunner : MonoBehaviour {
 
 	void runnerFinished(Collider c) {
 		Debug.Log ("Time: "+(Time.time - startTime));
+		backButton.enabled = true;
         enabled = false;
 	}
 

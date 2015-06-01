@@ -17,7 +17,7 @@ public class MazeOverview : MonoBehaviour {
 		float length = mg.getLength ();
 
 		float height = Mathf.Max (width, length);
-		transform.position = maze.transform.position + new Vector3 (width/2, height, length/2);
+		transform.position = maze.transform.position + new Vector3 (width/2, height*1.1f, length/2);
 		transform.rotation = Quaternion.LookRotation(Vector3.down, Vector3.up);
 	}
 
