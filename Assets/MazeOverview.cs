@@ -4,6 +4,9 @@ using System.Collections;
 public class MazeOverview : MonoBehaviour {
 
 	public GameObject maze;
+    private AudioSource audio;
+    public AudioClip overviewClip;
+    public AudioClip mazeClip;
 
 	private MazeGenerator mg;
 	private SmoothFollow sf;
@@ -12,6 +15,7 @@ public class MazeOverview : MonoBehaviour {
 	void Start () {
 		mg = maze.GetComponent<MazeGenerator> ();
 		sf = GetComponent<SmoothFollow> ();
+        audio = GetComponent<AudioSource>();
 
 		float width = mg.getWidth ();
 		float length = mg.getLength ();
@@ -25,6 +29,7 @@ public class MazeOverview : MonoBehaviour {
 		if (Input.GetKeyDown ("space")) {
 			sf.enabled = true;
 			sf.target.GetComponent<HoverMotor>().enabled = true;
+            audio.
 			enabled = false;
 		}
 	}
